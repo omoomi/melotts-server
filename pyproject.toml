@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "melotts-rk3588-server"
+version = "0.1.0"
+description = "Local MeloTTS service for RK3588 using RKNN."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn[standard]>=0.35,<1.0",
+  "numpy>=1.26,<3.0",
+  "onnxruntime>=1.18,<2.0",
+  "soundfile>=0.12,<1.0",
+  "httpx>=0.28,<1.0",
+  "huggingface-hub>=0.30,<1.0",
+  "pydantic>=2.10,<3.0",
+  "cn2an>=0.5.23,<1.0",
+  "inflect>=7.3,<8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9.0",
+]
+
+[project.scripts]
+melotts-cli = "melotts_server.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

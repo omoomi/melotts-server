@@ -1,0 +1,16 @@
+[Unit]
+Description=MeloTTS RK3588 local server
+After=network.target sound.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/repos/melotts-server
+Environment=MELOTTS_HOST=127.0.0.1
+Environment=MELOTTS_PORT=8123
+ExecStart=%h/repos/melotts-server/.venv/bin/melotts-cli serve
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
+
