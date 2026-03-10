@@ -6,15 +6,16 @@ from pydantic import BaseModel, Field
 
 
 class SpeakRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=1000)
+    text: str = Field(min_length=1)
     speed: float = Field(default=1.0, ge=0.5, le=2.0)
     volume: float = Field(default=1.0, ge=0.1, le=3.0)
-    speaker_id: Optional[str] = None
     playback_device: Optional[str] = None
 
 
-class SynthesizeRequest(SpeakRequest):
-    format: Literal["wav", "pcm_s16le"] = "wav"
+class SynthesizeRequest(BaseModel):
+    text: str = Field(min_length=1)
+    speed: float = Field(default=1.0, ge=0.5, le=2.0)
+    volume: float = Field(default=1.0, ge=0.1, le=3.0)
 
 
 class JobResponse(BaseModel):
@@ -25,12 +26,21 @@ class JobResponse(BaseModel):
     detail: Optional[str] = None
 
 
+class JobStatusResponse(BaseModel):
+    request_id: str
+    state: Literal["accepted", "synthesizing", "playing", "completed", "stopped", "error"]
+    queued_at: str
+    started_at: Optional[str] = None
+    finished_at: Optional[str] = None
+    detail: Optional[str] = None
+
+
 class StatusResponse(BaseModel):
     ready: bool
     model_loaded: bool
     audio_ready: bool
     current_request_id: Optional[str]
-    state: Literal["idle", "synthesizing", "playing", "stopped", "error"]
+    state: Literal["idle", "accepted", "synthesizing", "playing", "stopped", "error"]
     queue_depth: int
     sample_rate: int
     model_dir: str
@@ -40,4 +50,3 @@ class StatusResponse(BaseModel):
 
 class AudioDeviceResponse(BaseModel):
     devices: list[str]
-

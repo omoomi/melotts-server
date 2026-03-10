@@ -35,6 +35,9 @@ def main() -> None:
     synthesize.add_argument("--volume", type=float, default=1.0)
     synthesize.add_argument("--out", required=True)
 
+    job = subparsers.add_parser("job")
+    job.add_argument("request_id")
+
     subparsers.add_parser("status")
     subparsers.add_parser("stop")
     subparsers.add_parser("devices")
@@ -84,6 +87,8 @@ def main() -> None:
     with httpx.Client(base_url=f"http://{settings.host}:{settings.port}", timeout=30.0) as client:
         if args.command == "status":
             response = client.get("/v1/status")
+        elif args.command == "job":
+            response = client.get(f"/v1/jobs/{args.request_id}")
         elif args.command == "stop":
             response = client.post("/v1/stop")
         elif args.command == "devices":
@@ -92,4 +97,3 @@ def main() -> None:
             raise SystemExit(f"unknown command {args.command}")
         response.raise_for_status()
         print(json.dumps(response.json(), ensure_ascii=False, indent=2))
-

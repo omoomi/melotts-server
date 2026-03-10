@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Response
 
 from .config import Settings
-from .schemas import AudioDeviceResponse, JobResponse, SpeakRequest, StatusResponse, SynthesizeRequest
+from .schemas import AudioDeviceResponse, JobResponse, JobStatusResponse, SpeakRequest, StatusResponse, SynthesizeRequest
 from .service import TTSService
 
 
@@ -51,8 +51,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/v1/synthesize")
     async def synthesize(request: SynthesizeRequest) -> Response:
-        wav_data = service.synthesize(text=request.text, speed=request.speed, volume=request.volume)
+        try:
+            wav_data = service.synthesize(text=request.text, speed=request.speed, volume=request.volume)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         return Response(content=wav_data, media_type="audio/wav")
+
+    @app.get("/v1/jobs/{request_id}", response_model=JobStatusResponse)
+    async def job_status(request_id: str) -> JobStatusResponse:
+        job = service.get_job(request_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail="job not found")
+        return JobStatusResponse(**job)
 
     @app.post("/v1/stop", response_model=JobResponse)
     async def stop() -> JobResponse:
@@ -66,4 +76,3 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     return app
-

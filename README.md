@@ -141,6 +141,7 @@ Inspect or control the server:
 
 ```bash
 melotts-cli status
+melotts-cli job <request-id>
 melotts-cli devices
 melotts-cli stop
 melotts-cli bootstrap
@@ -151,6 +152,7 @@ melotts-cli bootstrap
 - `POST /v1/speak`
 - `POST /v1/synthesize`
 - `GET /v1/status`
+- `GET /v1/jobs/{request_id}`
 - `POST /v1/stop`
 - `GET /v1/audio/devices`
 
@@ -164,6 +166,30 @@ curl -s http://127.0.0.1:8123/v1/status
 curl -s -X POST http://127.0.0.1:8123/v1/speak \
   -H 'content-type: application/json' \
   -d '{"text":"你好，this is a local HTTP test.","speed":1.0,"volume":1.0}'
+```
+
+Poll a submitted playback job:
+
+```bash
+melotts-cli speak "作业状态测试"
+melotts-cli job <request-id>
+```
+
+## Voice Assistant Integration
+
+This server is now the expected TTS backend for `~/repos/voice-assistant`.
+
+Current integration contract:
+
+- `voice-assistant` submits text for playback with `POST /v1/speak`
+- `voice-assistant` polls `GET /v1/jobs/{request_id}` until completion
+- `voice-assistant` checks readiness with `GET /v1/status`
+- audio playback remains server-owned on the local RK3588 device
+
+Default integrated port:
+
+```text
+127.0.0.1:8123
 ```
 
 ## systemd User Service
