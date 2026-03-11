@@ -8,6 +8,7 @@ from pathlib import Path
 MODEL_ROOT = Path("models")
 DEFAULT_CHINESE_MODEL_DIR = MODEL_ROOT / "chinese"
 DEFAULT_ENGLISH_BUNDLE_DIR = MODEL_ROOT / "english-v3"
+DEFAULT_JAPANESE_BUNDLE_DIR = MODEL_ROOT / "japanese"
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -31,11 +32,16 @@ class Settings:
     english_enabled: bool = False
     english_bundle_dir: Path = DEFAULT_ENGLISH_BUNDLE_DIR
     english_latent_frames: int = 256
+    japanese_enabled: bool = False
+    japanese_bundle_dir: Path = DEFAULT_JAPANESE_BUNDLE_DIR
+    japanese_latent_frames: int = 256
 
     @classmethod
     def from_env(cls) -> "Settings":
         english_bundle_dir = Path(os.getenv("MELOTTS_ENGLISH_BUNDLE_DIR", str(DEFAULT_ENGLISH_BUNDLE_DIR)))
+        japanese_bundle_dir = Path(os.getenv("MELOTTS_JAPANESE_BUNDLE_DIR", str(DEFAULT_JAPANESE_BUNDLE_DIR)))
         english_enabled_default = english_bundle_dir.exists()
+        japanese_enabled_default = japanese_bundle_dir.exists()
         return cls(
             host=os.getenv("MELOTTS_HOST", "127.0.0.1"),
             port=int(os.getenv("MELOTTS_PORT", "8123")),
@@ -49,4 +55,7 @@ class Settings:
             english_enabled=_env_bool("MELOTTS_ENGLISH_ENABLED", english_enabled_default),
             english_bundle_dir=english_bundle_dir,
             english_latent_frames=int(os.getenv("MELOTTS_ENGLISH_LATENT_FRAMES", "256")),
+            japanese_enabled=_env_bool("MELOTTS_JAPANESE_ENABLED", japanese_enabled_default),
+            japanese_bundle_dir=japanese_bundle_dir,
+            japanese_latent_frames=int(os.getenv("MELOTTS_JAPANESE_LATENT_FRAMES", "256")),
         )

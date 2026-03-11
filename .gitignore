@@ -8,5 +8,6 @@ dist/
 build/
 *.pyc
 models/
+tohoku-nlp/
 artifacts/
 *.wav

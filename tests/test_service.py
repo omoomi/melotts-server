@@ -37,6 +37,7 @@ class FakeRuntimeRegistry:
     def __init__(self):
         self.zh = FakeEngine("zh")
         self.en = FakeEngine("en")
+        self.ja = FakeEngine("ja")
         self._profiles = {
             "zh": RuntimeProfileStatus(
                 enabled=True,
@@ -52,6 +53,13 @@ class FakeRuntimeRegistry:
                 model_dir="/models/en",
                 runtime_name="en-runtime",
             ),
+            "ja": RuntimeProfileStatus(
+                enabled=True,
+                ready=True,
+                model_loaded=True,
+                model_dir="/models/ja",
+                runtime_name="ja-runtime",
+            ),
         }
 
     def warmup_enabled(self):
@@ -61,12 +69,18 @@ class FakeRuntimeRegistry:
         return None
 
     def resolve_language(self, language: str) -> str:
-        return "zh" if language in {"zh", "yue"} else "en"
+        if language in {"zh", "yue"}:
+            return "zh"
+        if language in {"ja", "jp"}:
+            return "ja"
+        return "en"
 
     def get_engine(self, language: str):
         resolved = self.resolve_language(language)
         if resolved == "zh":
             return self.zh
+        if resolved == "ja":
+            return self.ja
         if resolved == "en":
             return self.en
         raise RuntimeError(f"unsupported language: {language}")
@@ -158,6 +172,20 @@ def test_speak_routes_cantonese_to_chinese_runtime():
     assert service.runtimes.en.calls == []
 
 
+def test_speak_routes_japanese_to_japanese_runtime():
+    service = build_service()
+
+    with patch("melotts_server.service.threading.Thread", ImmediateThread):
+        request_id, _ = service.speak("こんにちは", 1.0, 1.0, language="ja")
+
+    job = service.get_job(request_id)
+    assert job is not None
+    assert job["state"] == "completed"
+    assert service.runtimes.ja.calls[0][0] == "こんにちは"
+    assert service.runtimes.zh.calls == []
+    assert service.runtimes.en.calls == []
+
+
 def test_synthesize_rejects_text_over_limit():
     service = TTSService(Settings(max_text_chars=3))
     service.runtimes = FakeRuntimeRegistry()
@@ -239,3 +267,13 @@ def test_runtime_resolution_uses_chinese_profile_for_yue():
     assert session is not None
     assert service.runtimes.resolve_language("yue") == "zh"
     assert service._sessions[session_id].language == "zh"
+
+
+def test_runtime_resolution_uses_japanese_profile_for_ja():
+    service = build_service()
+    session_id, _ = service.create_session("ja", 1.0, 1.0)
+    session = service.get_session(session_id)
+
+    assert session is not None
+    assert service.runtimes.resolve_language("ja") == "ja"
+    assert service._sessions[session_id].language == "ja"

@@ -9,7 +9,13 @@ import httpx
 import uvicorn
 
 from .app import create_app
-from .artifacts import bootstrap_artifacts, install_english_bundle, validate_artifacts, validate_english_bundle
+from .artifacts import (
+    bootstrap_artifacts,
+    install_english_bundle,
+    validate_artifacts,
+    validate_english_bundle,
+    validate_japanese_bundle,
+)
 from .config import Settings
 
 
@@ -53,6 +59,8 @@ def main() -> None:
         validate_artifacts(settings.model_dir)
         if settings.english_enabled:
             validate_english_bundle(settings.english_bundle_dir)
+        if settings.japanese_enabled:
+            validate_japanese_bundle(settings.japanese_bundle_dir)
         uvicorn.run(create_app(settings), host=settings.host, port=settings.port, log_level="info")
         return
 

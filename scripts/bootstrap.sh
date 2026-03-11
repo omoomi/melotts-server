@@ -7,8 +7,15 @@ fi
 
 . .venv/bin/activate
 python -m pip install -U pip
-if [[ -n "${MELOTTS_ENGLISH_BUNDLE_SRC:-}" || "${MELOTTS_ENGLISH_ENABLED:-}" == "true" ]]; then
-  python -m pip install -e ".[dev,english]"
+if [[ -n "${MELOTTS_ENGLISH_BUNDLE_SRC:-}" || "${MELOTTS_ENGLISH_ENABLED:-}" == "true" || "${MELOTTS_JAPANESE_ENABLED:-}" == "true" ]]; then
+  extras="dev"
+  if [[ -n "${MELOTTS_ENGLISH_BUNDLE_SRC:-}" || "${MELOTTS_ENGLISH_ENABLED:-}" == "true" ]]; then
+    extras="${extras},english"
+  fi
+  if [[ "${MELOTTS_JAPANESE_ENABLED:-}" == "true" ]]; then
+    extras="${extras},japanese"
+  fi
+  python -m pip install -e ".[${extras}]"
 else
   python -m pip install -e ".[dev]"
 fi

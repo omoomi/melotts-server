@@ -6,6 +6,7 @@ from typing import Literal
 from .config import Settings
 from .english_runtime import MeloTTSEnglishV3Engine
 from .inference import MeloTTSRKNNEngine
+from .japanese_runtime import MeloTTSJapaneseEngine
 
 
 @dataclass(slots=True)
@@ -23,12 +24,12 @@ class RuntimeProfile:
     enabled: bool
     runtime_name: str
     model_dir: str
-    engine: MeloTTSRKNNEngine | MeloTTSEnglishV3Engine
+    engine: MeloTTSRKNNEngine | MeloTTSEnglishV3Engine | MeloTTSJapaneseEngine
     detail: str | None = None
 
 
 class RuntimeRegistry:
-    """Language-routed runtime registry for Chinese and English profiles."""
+    """Language-routed runtime registry for Chinese, English, and Japanese profiles."""
 
     def __init__(self, settings: Settings):
         self._settings = settings
@@ -44,6 +45,12 @@ class RuntimeRegistry:
                 runtime_name="melo-english-v3",
                 model_dir=str(settings.english_bundle_dir),
                 engine=MeloTTSEnglishV3Engine(settings),
+            ),
+            "ja": RuntimeProfile(
+                enabled=settings.japanese_enabled,
+                runtime_name="melo-japanese",
+                model_dir=str(settings.japanese_bundle_dir),
+                engine=MeloTTSJapaneseEngine(settings),
             ),
         }
 
@@ -62,10 +69,12 @@ class RuntimeRegistry:
         for profile in self._profiles.values():
             profile.engine.unload()
 
-    def resolve_language(self, language: str) -> Literal["zh", "en"]:
+    def resolve_language(self, language: str) -> Literal["zh", "en", "ja"]:
         lang = (language or "en").lower()
         if lang in {"zh", "yue"}:
             return "zh"
+        if lang in {"ja", "jp"}:
+            return "ja"
         return "en"
 
     def get_engine(self, language: str):

@@ -6,7 +6,7 @@ Device-local text-to-speech service for Rockchip RK3588 using the published Melo
 
 - Loopback-only HTTP API for single-user local clients
 - Session-based incremental playback queue for low-latency local clients
-- Multi-runtime language routing: Chinese bundle for `zh`, English-v3 bundle for `en`
+- Multi-runtime language routing: Chinese bundle for `zh`, English-v3 bundle for `en`, Japanese bundle for `ja`
 - CLI for `serve`, `speak`, `synthesize`, `status`, `stop`, and `devices`
 - Hybrid inference path: CPU preprocessing/encoder plus RKNN decoder on the NPU
 - Server-owned playback to the analog audio output through ALSA via `aplay`
@@ -26,7 +26,7 @@ Device-local text-to-speech service for Rockchip RK3588 using the published Melo
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -U pip
-pip install -e ".[dev]"
+pip install -e ".[dev,english,japanese]"
 pip install rknn-toolkit-lite2
 melotts-cli bootstrap
 melotts-cli serve
@@ -56,6 +56,11 @@ RKNN_LITE_WHEEL=/path/to/rknn_toolkit_lite2-*.whl ./scripts/bootstrap.sh
 
 If `RKNN_LITE_WHEEL` is omitted, the script only installs the Python package set and downloads the model artifacts.
 
+Language extras:
+
+- `.[english]` installs the English runtime dependencies
+- `.[japanese]` installs the Japanese frontend dependencies: `fugashi`, `mecab-python3`, `num2words`, `pykakasi`, and `unidic-lite`
+
 ## Model assets
 
 All model assets live under the repo-local `./models/` directory.
@@ -63,11 +68,13 @@ The server now uses this in-repo layout by default:
 
 - `models/chinese` for the Chinese RKNN bundle
 - `models/english-v3` for the English-v3 bundle
+- `models/japanese` for the Japanese hybrid bundle
 
 These model files are local runtime assets and are not committed to Git.
 
 By default the bootstrap step downloads `happyme531/MeloTTS-RKNN2` into `./models/chinese`.
 If enabled, the English-v3 bundle is expected at `./models/english-v3`.
+If enabled, the Japanese bundle is expected at `./models/japanese`.
 
 The service expects these files:
 
@@ -125,6 +132,9 @@ Environment variables:
 - `MELOTTS_ENGLISH_ENABLED` default auto-enable when `MELOTTS_ENGLISH_BUNDLE_DIR` exists
 - `MELOTTS_ENGLISH_BUNDLE_DIR` default `models/english-v3`
 - `MELOTTS_ENGLISH_LATENT_FRAMES` default `256`
+- `MELOTTS_JAPANESE_ENABLED` default auto-enable when `MELOTTS_JAPANESE_BUNDLE_DIR` exists
+- `MELOTTS_JAPANESE_BUNDLE_DIR` default `models/japanese`
+- `MELOTTS_JAPANESE_LATENT_FRAMES` default `256`
 - `MELOTTS_RUNTIME_LIB_DIR` default `lib`
 - `MELOTTS_ALSA_DEVICE` default `auto`
 - `MELOTTS_PREBUFFER_MS` default `200`
@@ -186,6 +196,7 @@ The server binds to `127.0.0.1` by default.
 Language routing:
 
 - `language=en` uses the converted English-v3 hybrid runtime
+- `language=ja` uses the Japanese hybrid runtime
 - `language=zh` and `language=yue` use the existing Chinese RKNN bundle
 
 Example:
@@ -273,6 +284,7 @@ Validated on the current RK3588 host:
 - Real synthesis produced a WAV output successfully
 - Loopback HTTP server responded successfully
 - Live playback request entered `playing` state on `sysdefault:CARD=rockchipes8388`
+- Japanese live playback request completed successfully on `sysdefault:CARD=rockchipes8388`
 
 Notes:
 
