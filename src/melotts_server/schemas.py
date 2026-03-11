@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SpeakRequest(BaseModel):
@@ -17,6 +17,7 @@ class SynthesizeRequest(BaseModel):
     text: str = Field(min_length=1)
     speed: float = Field(default=1.0, ge=0.5, le=2.0)
     volume: float = Field(default=1.0, ge=0.1, le=3.0)
+    language: str = Field(default="en", min_length=2, max_length=8)
 
 
 class JobResponse(BaseModel):
@@ -35,8 +36,9 @@ class SessionCreateRequest(BaseModel):
 
 
 class SessionChunkRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     text: str = Field(min_length=1)
-    language: str = Field(default="en", min_length=2, max_length=8)
     speed: float = Field(default=1.0, ge=0.5, le=2.0)
     volume: float = Field(default=1.0, ge=0.1, le=3.0)
 
@@ -68,6 +70,15 @@ class JobStatusResponse(BaseModel):
     detail: Optional[str] = None
 
 
+class RuntimeProfileResponse(BaseModel):
+    enabled: bool
+    ready: bool
+    model_loaded: bool
+    model_dir: str
+    runtime_name: str
+    detail: Optional[str] = None
+
+
 class StatusResponse(BaseModel):
     ready: bool
     model_loaded: bool
@@ -78,7 +89,7 @@ class StatusResponse(BaseModel):
     sample_rate: int
     model_dir: str
     audio_device: str
-    features: dict[str, bool] = Field(default_factory=dict)
+    profiles: dict[str, RuntimeProfileResponse] = Field(default_factory=dict)
     detail: Optional[str] = None
 
 

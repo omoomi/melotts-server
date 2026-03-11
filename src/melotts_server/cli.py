@@ -9,7 +9,7 @@ import httpx
 import uvicorn
 
 from .app import create_app
-from .artifacts import bootstrap_artifacts, validate_artifacts
+from .artifacts import bootstrap_artifacts, install_english_bundle, validate_artifacts, validate_english_bundle
 from .config import Settings
 
 
@@ -22,17 +22,21 @@ def main() -> None:
     bootstrap = subparsers.add_parser("bootstrap")
     bootstrap.add_argument("--repo-id", default=None)
     bootstrap.add_argument("--model-dir", default=None)
+    bootstrap.add_argument("--english-bundle-src", default=None)
+    bootstrap.add_argument("--english-bundle-dir", default=None)
 
     speak = subparsers.add_parser("speak")
     speak.add_argument("text", nargs="?")
     speak.add_argument("--speed", type=float, default=1.0)
     speak.add_argument("--volume", type=float, default=1.0)
+    speak.add_argument("--language", default="en")
     speak.add_argument("--device", default=None)
 
     synthesize = subparsers.add_parser("synthesize")
     synthesize.add_argument("text", nargs="?")
     synthesize.add_argument("--speed", type=float, default=1.0)
     synthesize.add_argument("--volume", type=float, default=1.0)
+    synthesize.add_argument("--language", default="en")
     synthesize.add_argument("--out", required=True)
 
     job = subparsers.add_parser("job")
@@ -47,14 +51,21 @@ def main() -> None:
 
     if args.command == "serve":
         validate_artifacts(settings.model_dir)
+        if settings.english_enabled:
+            validate_english_bundle(settings.english_bundle_dir)
         uvicorn.run(create_app(settings), host=settings.host, port=settings.port, log_level="info")
         return
 
     if args.command == "bootstrap":
         repo_id = args.repo_id or settings.model_repo_id
         model_dir = Path(args.model_dir) if args.model_dir else settings.model_dir
-        path = bootstrap_artifacts(repo_id, model_dir)
-        print(path)
+        zh_path = bootstrap_artifacts(repo_id, model_dir)
+        print(zh_path)
+        english_src = args.english_bundle_src
+        if english_src is not None:
+            english_target = Path(args.english_bundle_dir) if args.english_bundle_dir else settings.english_bundle_dir
+            en_path = install_english_bundle(Path(english_src), english_target)
+            print(en_path)
         return
 
     if args.command in {"speak", "synthesize"}:
@@ -69,6 +80,7 @@ def main() -> None:
                         "text": text,
                         "speed": args.speed,
                         "volume": args.volume,
+                        "language": args.language,
                         "playback_device": args.device,
                     },
                 )
@@ -77,7 +89,7 @@ def main() -> None:
                 return
             response = client.post(
                 "/v1/synthesize",
-                json={"text": text, "speed": args.speed, "volume": args.volume},
+                json={"text": text, "speed": args.speed, "volume": args.volume, "language": args.language},
             )
             response.raise_for_status()
             Path(args.out).write_bytes(response.content)

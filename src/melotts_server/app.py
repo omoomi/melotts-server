@@ -49,6 +49,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 text=request.text,
                 speed=request.speed,
                 volume=request.volume,
+                language=request.language,
                 playback_device=request.playback_device,
             )
         except RuntimeError as exc:
@@ -116,7 +117,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/v1/synthesize")
     async def synthesize(request: SynthesizeRequest) -> Response:
         try:
-            wav_data = service.synthesize(text=request.text, speed=request.speed, volume=request.volume)
+            wav_data = service.synthesize(
+                text=request.text,
+                speed=request.speed,
+                volume=request.volume,
+                language=request.language,
+            )
         except RuntimeError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return Response(content=wav_data, media_type="audio/wav")
