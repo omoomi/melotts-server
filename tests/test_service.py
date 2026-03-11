@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from unittest.mock import patch
 
 import numpy as np
@@ -97,5 +98,67 @@ def test_synthesize_rejects_text_over_limit():
         service.synthesize("hello", 1.0, 1.0)
     except RuntimeError as exc:
         assert "max length" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError")
+
+
+def test_status_advertises_session_streaming():
+    service = TTSService(Settings())
+    service.engine = FakeEngine()
+    service.player = FakePlayer()
+
+    status = service.status()
+
+    assert status["features"]["session_streaming"] is True
+
+
+def test_session_commit_with_chunks_completes():
+    service = TTSService(Settings())
+    service.engine = FakeEngine()
+    service.player = FakePlayer()
+
+    session_id, _ = service.create_session("en", 1.0, 1.0)
+    service.enqueue_session_chunk(session_id, "hello", 1.0, 1.0)
+    payload = service.commit_session(session_id)
+
+    for _ in range(50):
+        session = service.get_session(session_id)
+        if session is not None and session["state"] == "completed":
+            break
+        time.sleep(0.01)
+
+    assert payload["session_id"] == session_id
+    session = service.get_session(session_id)
+    assert session is not None
+    assert session["chunk_count"] == 1
+    assert session["state"] == "completed"
+
+
+def test_session_cancel_marks_cancelled():
+    service = TTSService(Settings())
+    service.engine = FakeEngine()
+    service.player = FakePlayer()
+
+    session_id, _ = service.create_session("en", 1.0, 1.0)
+    payload = service.cancel_session(session_id)
+
+    assert payload["state"] == "cancelled"
+    session = service.get_session(session_id)
+    assert session is not None
+    assert session["state"] == "cancelled"
+
+
+def test_session_rejects_chunks_after_commit():
+    service = TTSService(Settings())
+    service.engine = FakeEngine()
+    service.player = FakePlayer()
+
+    session_id, _ = service.create_session("en", 1.0, 1.0)
+    service.commit_session(session_id)
+
+    try:
+        service.enqueue_session_chunk(session_id, "late chunk", 1.0, 1.0)
+    except RuntimeError as exc:
+        assert "committed" in str(exc)
     else:
         raise AssertionError("expected RuntimeError")

@@ -5,7 +5,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Response
 
 from .config import Settings
-from .schemas import AudioDeviceResponse, JobResponse, JobStatusResponse, SpeakRequest, StatusResponse, SynthesizeRequest
+from .schemas import (
+    AudioDeviceResponse,
+    JobResponse,
+    JobStatusResponse,
+    SessionChunkRequest,
+    SessionCreateRequest,
+    SessionResponse,
+    SessionStatusResponse,
+    SpeakRequest,
+    StatusResponse,
+    SynthesizeRequest,
+)
 from .service import TTSService
 
 
@@ -48,6 +59,59 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             queued_at=queued_at.isoformat(),
             estimated_latency_ms=config.prebuffer_ms,
         )
+
+    @app.post("/v1/sessions", response_model=SessionResponse)
+    async def create_session(request: SessionCreateRequest) -> SessionResponse:
+        try:
+            session_id, queued_at = service.create_session(
+                language=request.language,
+                speed=request.speed,
+                volume=request.volume,
+                playback_device=request.playback_device,
+            )
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return SessionResponse(session_id=session_id, state="accepted", queued_at=queued_at.isoformat())
+
+    @app.post("/v1/sessions/{session_id}/chunks", response_model=SessionStatusResponse)
+    async def enqueue_session_chunk(session_id: str, request: SessionChunkRequest) -> SessionStatusResponse:
+        try:
+            payload = service.enqueue_session_chunk(
+                session_id=session_id,
+                text=request.text,
+                speed=request.speed,
+                volume=request.volume,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return SessionStatusResponse(**payload)
+
+    @app.post("/v1/sessions/{session_id}/commit", response_model=SessionStatusResponse)
+    async def commit_session(session_id: str) -> SessionStatusResponse:
+        try:
+            payload = service.commit_session(session_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return SessionStatusResponse(**payload)
+
+    @app.post("/v1/sessions/{session_id}/cancel", response_model=SessionStatusResponse)
+    async def cancel_session(session_id: str) -> SessionStatusResponse:
+        try:
+            payload = service.cancel_session(session_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return SessionStatusResponse(**payload)
+
+    @app.get("/v1/sessions/{session_id}", response_model=SessionStatusResponse)
+    async def session_status(session_id: str) -> SessionStatusResponse:
+        payload = service.get_session(session_id)
+        if payload is None:
+            raise HTTPException(status_code=404, detail="session not found")
+        return SessionStatusResponse(**payload)
 
     @app.post("/v1/synthesize")
     async def synthesize(request: SynthesizeRequest) -> Response:

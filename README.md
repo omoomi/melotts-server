@@ -5,6 +5,7 @@ Device-local text-to-speech service for Rockchip RK3588 using the published Melo
 ## Features
 
 - Loopback-only HTTP API for single-user local clients
+- Session-based incremental playback queue for low-latency local clients
 - CLI for `serve`, `speak`, `synthesize`, `status`, `stop`, and `devices`
 - Hybrid inference path: CPU preprocessing/encoder plus RKNN decoder on the NPU
 - Server-owned playback to the analog audio output through ALSA via `aplay`
@@ -149,12 +150,22 @@ melotts-cli bootstrap
 
 ## API
 
+Status and legacy playback:
+
 - `POST /v1/speak`
 - `POST /v1/synthesize`
 - `GET /v1/status`
 - `GET /v1/jobs/{request_id}`
 - `POST /v1/stop`
 - `GET /v1/audio/devices`
+
+Session streaming:
+
+- `POST /v1/sessions`
+- `POST /v1/sessions/{session_id}/chunks`
+- `POST /v1/sessions/{session_id}/commit`
+- `POST /v1/sessions/{session_id}/cancel`
+- `GET /v1/sessions/{session_id}`
 
 The server binds to `127.0.0.1` by default.
 
@@ -175,15 +186,34 @@ melotts-cli speak "作业状态测试"
 melotts-cli job <request-id>
 ```
 
+Queue an incremental playback session:
+
+```bash
+SESSION_ID=$(curl -s -X POST http://127.0.0.1:8123/v1/sessions \
+  -H 'content-type: application/json' \
+  -d '{"language":"zh","speed":1.0,"volume":1.0}' | python -c 'import json,sys; print(json.load(sys.stdin)["session_id"])')
+
+curl -s -X POST "http://127.0.0.1:8123/v1/sessions/${SESSION_ID}/chunks" \
+  -H 'content-type: application/json' \
+  -d '{"text":"你好，这是第一段。","language":"zh","speed":1.0,"volume":1.0}'
+
+curl -s -X POST "http://127.0.0.1:8123/v1/sessions/${SESSION_ID}/chunks" \
+  -H 'content-type: application/json' \
+  -d '{"text":"这是第二段。","language":"zh","speed":1.0,"volume":1.0}'
+
+curl -s -X POST "http://127.0.0.1:8123/v1/sessions/${SESSION_ID}/commit"
+curl -s "http://127.0.0.1:8123/v1/sessions/${SESSION_ID}"
+```
+
 ## Voice Assistant Integration
 
 This server is now the expected TTS backend for `~/repos/voice-assistant`.
 
 Current integration contract:
 
-- `voice-assistant` submits text for playback with `POST /v1/speak`
-- `voice-assistant` polls `GET /v1/jobs/{request_id}` until completion
 - `voice-assistant` checks readiness with `GET /v1/status`
+- preferred path: `voice-assistant` creates a playback session with `POST /v1/sessions`, enqueues stable chunks, commits, and polls `GET /v1/sessions/{session_id}`
+- fallback path: `voice-assistant` submits whole text with `POST /v1/speak` and polls `GET /v1/jobs/{request_id}`
 - audio playback remains server-owned on the local RK3588 device
 
 Default integrated port:
