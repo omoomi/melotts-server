@@ -3,24 +3,20 @@ name: 'Qwen Code Dispatch'
 on:
   pull_request_review_comment:
     types:
-      - 'synchronize'
       - 'created'
   pull_request_review:
     types:
-      - 'synchronize'
       - 'submitted'
   pull_request:
     types:
-      - 'synchronize'
       - 'opened'
+      - 'synchronize'
   issues:
     types:
-      - 'synchronize'
       - 'opened'
       - 'reopened'
   issue_comment:
     types:
-      - 'synchronize'
       - 'created'
 
 defaults:
