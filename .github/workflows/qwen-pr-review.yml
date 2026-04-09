@@ -1,0 +1,35 @@
+name: Qwen Pull Request Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run Qwen Code Review
+        uses: QwenLM/qwen-code-action@v1
+        with:
+          openai_api_key: ${{ secrets.QWEN_API_KEY }}
+          openai_base_url: 'https://coding-intl.dashscope.aliyuncs.com/v1'
+          openai_model: 'qwen-coder-plus-latest'
+          prompt: |
+            You are an expert code reviewer. Analyze this pull request for:
+            1. Code quality and best practices
+            2. Potential bugs or security vulnerabilities
+            3. Performance considerations
+            4. Adherence to project coding standards
+            
+            Provide clear, actionable feedback.
+          qwen_debug: false
