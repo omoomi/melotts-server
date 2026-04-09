@@ -1,0 +1,16 @@
+name: 'Qwen Code Invoke'
+
+on:
+  workflow_call:
+    inputs:
+      additional_context:
+        type: 'string'
+        description: 'Any additional context from the request'
+        required: false
+
+jobs:
+  invoke:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Not implemented'
+        run: echo "Invoke workflow not implemented yet"

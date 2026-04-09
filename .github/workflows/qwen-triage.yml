@@ -1,0 +1,16 @@
+name: 'Qwen Code Triage'
+
+on:
+  workflow_call:
+    inputs:
+      additional_context:
+        type: 'string'
+        description: 'Any additional context from the request'
+        required: false
+
+jobs:
+  triage:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Not implemented'
+        run: echo "Triage workflow not implemented yet"
