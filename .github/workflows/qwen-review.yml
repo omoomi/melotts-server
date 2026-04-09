@@ -22,12 +22,10 @@ jobs:
 
       - name: Run Qwen Code pull request review
         uses: QwenLM/qwen-code-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           openai_api_key: ${{ secrets.QWEN_API_KEY }}
           openai_base_url: https://coding-intl.dashscope.aliyuncs.com/v1
           openai_model: qwen-coder-plus-latest
-          settings: |
-            {"model":{"maxSessionTurns":25},"telemetry":{"enabled":true,"target":"local","outfile":".qwen/telemetry.log"},"mcpServers":{"github":{"command":"docker","args":["run","-i","--rm","-e","GITHUB_PERSONAL_ACCESS_TOKEN","ghcr.io/github/github-mcp-server:v0.18.0"],"includeTools":["add_comment_to_pending_review","create_pending_pull_request_review","pull_request_read","submit_pending_pull_request_review"],"env":{"GITHUB_PERSONAL_ACCESS_TOKEN":"${GITHUB_TOKEN}"}}},"tools":{"core":["run_shell_command(cat)","run_shell_command(echo)","run_shell_command(grep)","run_shell_command(head)","run_shell_command(tail)"]}}
-          prompt: /qwen-review
+          prompt: |
+            Review this pull request for code quality, best practices, potential bugs, and security issues.
+            Provide clear, actionable feedback as a PR review.
