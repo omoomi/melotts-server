@@ -11,3 +11,7 @@ models/
 tohoku-nlp/
 artifacts/
 *.wav
+
+# Qwen Code
+.qwen/
+gha-creds-*.json
