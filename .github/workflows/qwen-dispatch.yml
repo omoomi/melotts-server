@@ -25,8 +25,7 @@ defaults:
 
 jobs:
   debugger:
-    if: |-
-     ${{ fromJSON(vars.DEBUG || vars.ACTIONS_STEP_DEBUG || false) }}
+    if: ${{ fromJSON(vars.DEBUG || vars.ACTIONS_STEP_DEBUG || 'false') }}
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'read'
@@ -47,18 +46,7 @@ jobs:
     # For PRs: only if not from a fork
     # For issues: only on open/reopen
     # For comments: only if user types @qwencoder and is OWNER/MEMBER/COLLABORATOR
-    if: |-
-      (
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.fork == false
-      ) || (
-        github.event_name == 'issues' &&
-        contains(fromJSON('["opened", "reopened"]'), github.event.action)
-      ) || (
-        github.event.sender.type == 'User' &&
-        startsWith(github.event.comment.body || github.event.review.body || github.event.issue.body, '@qwencoder') &&
-        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.review.author_association || github.event.issue.author_association)
-      )
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'issues' && contains(fromJSON('["opened", "reopened"]'), github.event.action)) || (github.event.sender.type == 'User' && startsWith(github.event.comment.body || github.event.review.body || github.event.issue.body, '@qwencoder') && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.review.author_association || github.event.issue.author_association)) }}
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'read'
@@ -72,8 +60,7 @@ jobs:
     steps:
       - name: 'Mint identity token'
         id: 'mint_identity_token'
-        if: |-
-          ${{ vars.APP_ID }}
+        if: ${{ vars.APP_ID }}
         uses: 'actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b' # ratchet:actions/create-github-app-token@v2
         with:
           app-id: '${{ vars.APP_ID }}'
@@ -126,8 +113,7 @@ jobs:
 
   review:
     needs: 'dispatch'
-    if: |-
-      ${{ needs.dispatch.outputs.command == 'review' }}
+    if: ${{ needs.dispatch.outputs.command == 'review' }}
     uses: './.github/workflows/qwen-review.yml'
     permissions:
       contents: 'read'
@@ -140,8 +126,7 @@ jobs:
 
   triage:
     needs: 'dispatch'
-    if: |-
-      ${{ needs.dispatch.outputs.command == 'triage' }}
+    if: ${{ needs.dispatch.outputs.command == 'triage' }}
     uses: './.github/workflows/qwen-triage.yml'
     permissions:
       contents: 'read'
@@ -154,8 +139,7 @@ jobs:
 
   invoke:
     needs: 'dispatch'
-    if: |-
-      ${{ needs.dispatch.outputs.command == 'invoke' }}
+    if: ${{ needs.dispatch.outputs.command == 'invoke' }}
     uses: './.github/workflows/qwen-invoke.yml'
     permissions:
       contents: 'read'
@@ -172,8 +156,7 @@ jobs:
       - 'review'
       - 'triage'
       - 'invoke'
-    if: |-
-      ${{ always() && !cancelled() && (failure() || needs.dispatch.outputs.command == 'fallthrough') }}
+    if: ${{ always() && !cancelled() && (failure() || needs.dispatch.outputs.command == 'fallthrough') }}
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'read'
@@ -182,8 +165,7 @@ jobs:
     steps:
       - name: 'Mint identity token'
         id: 'mint_identity_token'
-        if: |-
-          ${{ vars.APP_ID }}
+        if: ${{ vars.APP_ID }}
         uses: 'actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b' # ratchet:actions/create-github-app-token@v2
         with:
           app-id: '${{ vars.APP_ID }}'
