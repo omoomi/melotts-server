@@ -1,4 +1,4 @@
-name: '🔎 Qwen Code Review'
+name: 'Qwen Code Review'
 
 on:
   workflow_call:
