@@ -6,7 +6,7 @@ on:
   pull_request_review:
     types: ['submitted']
   pull_request:
-    types: ['opened', 'synchronize', 'reopened']
+    types: ['opened']
   issues:
     types: ['opened', 'reopened']
   issue_comment:
@@ -17,14 +17,32 @@ defaults:
     shell: 'bash'
 
 jobs:
-  dispatcher:
+  debugger:
+    if: ${{ fromJSON(vars.DEBUG || vars.ACTIONS_STEP_DEBUG || 'false') }}
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+    steps:
+      - name: 'Print context for debugging'
+        env:
+          DEBUG_event_name: '${{ github.event_name }}'
+          DEBUG_event__action: '${{ github.event.action }}'
+          DEBUG_event__comment__author_association: '${{ github.event.comment.author_association }}'
+          DEBUG_event__issue__author_association: '${{ github.event.issue.author_association }}'
+          DEBUG_event__pull_request__author_association: '${{ github.event.pull_request.author_association }}'
+          DEBUG_event__review__author_association: '${{ github.event.review.author_association }}'
+          DEBUG_event: '${{ toJSON(github.event) }}'
+        run: |
+          env | grep '^DEBUG_'
+
+  dispatch:
     # For PRs: only if not from a fork
     # For issues: only on open/reopen
     # For comments: only if user types @qwencoder and is OWNER/MEMBER/COLLABORATOR
     if: |
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) ||
-      (github.event_name == 'issues' && contains(fromJSON('["opened", "reopened"]'), github.event.action)) ||
-      (github.event.sender.type == 'User' && startsWith(github.event.comment.body || github.event.review.body || github.event.issue.body, '@qwencoder') && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.review.author_association || github.event.issue.author_association))
+      ( github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false ) ||
+      ( github.event_name == 'issues' && contains(fromJSON('["opened", "reopened"]'), github.event.action) ) ||
+      ( github.event.sender.type == 'User' && startsWith(github.event.comment.body || github.event.review.body || github.event.issue.body, '@qwencoder') && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.review.author_association || github.event.issue.author_association) )
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'read'
@@ -58,7 +76,7 @@ jobs:
             const eventType = process.env.EVENT_TYPE;
             const request = process.env.REQUEST;
             core.setOutput('request', request);
-            if (eventType === 'pull_request.opened' || eventType === 'pull_request.synchronize' || eventType === 'pull_request.reopened') {
+            if (eventType === 'pull_request.opened') {
               core.setOutput('command', 'review');
             } else if (['issues.opened', 'issues.reopened'].includes(eventType)) {
               core.setOutput('command', 'triage');
@@ -89,8 +107,8 @@ jobs:
           --repo "${REPOSITORY}"
 
   review:
-    needs: 'dispatcher'
-    if: ${{ needs.dispatcher.outputs.command == 'review' }}
+    needs: 'dispatch'
+    if: ${{ needs.dispatch.outputs.command == 'review' }}
     uses: './.github/workflows/qwen-review.yml'
     permissions:
       contents: 'read'
@@ -98,12 +116,12 @@ jobs:
       issues: 'write'
       pull-requests: 'write'
     with:
-      additional_context: '${{ needs.dispatcher.outputs.additional_context }}'
+      additional_context: '${{ needs.dispatch.outputs.additional_context }}'
     secrets: 'inherit'
 
   triage:
-    needs: 'dispatcher'
-    if: ${{ needs.dispatcher.outputs.command == 'triage' }}
+    needs: 'dispatch'
+    if: ${{ needs.dispatch.outputs.command == 'triage' }}
     uses: './.github/workflows/qwen-triage.yml'
     permissions:
       contents: 'read'
@@ -111,12 +129,12 @@ jobs:
       issues: 'write'
       pull-requests: 'write'
     with:
-      additional_context: '${{ needs.dispatcher.outputs.additional_context }}'
+      additional_context: '${{ needs.dispatch.outputs.additional_context }}'
     secrets: 'inherit'
 
   invoke:
-    needs: 'dispatcher'
-    if: ${{ needs.dispatcher.outputs.command == 'invoke' }}
+    needs: 'dispatch'
+    if: ${{ needs.dispatch.outputs.command == 'invoke' }}
     uses: './.github/workflows/qwen-invoke.yml'
     permissions:
       contents: 'read'
@@ -124,12 +142,12 @@ jobs:
       issues: 'write'
       pull-requests: 'write'
     with:
-      additional_context: '${{ needs.dispatcher.outputs.additional_context }}'
+      additional_context: '${{ needs.dispatch.outputs.additional_context }}'
     secrets: 'inherit'
 
   fallthrough:
-    needs: ['dispatcher', 'review', 'triage', 'invoke']
-    if: ${{ always() && !cancelled() && (failure() || needs.dispatcher.outputs.command == 'fallthrough') }}
+    needs: ['dispatch', 'review', 'triage', 'invoke']
+    if: ${{ always() && !cancelled() && (failure() || needs.dispatch.outputs.command == 'fallthrough') }}
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'read'
