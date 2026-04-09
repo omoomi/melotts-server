@@ -31,8 +31,8 @@ jobs:
         if: ${{ vars.APP_ID }}
         uses: 'actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b'
         with:
-          app-id: '${{ vars.APP_ID }}'
-          private-key: '${{ secrets.APP_PRIVATE_KEY }}'
+          app-id: "${{ vars.APP_ID }}"
+          private-key: "${{ secrets.APP_PRIVATE_KEY }}"
           permission-contents: 'read'
           permission-issues: 'write'
           permission-pull-requests: 'write'
@@ -44,45 +44,19 @@ jobs:
         uses: 'QwenLM/qwen-code-action@v1'
         id: 'qwen_pr_review'
         env:
-          GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
-          ISSUE_TITLE: '${{ github.event.pull_request.title || github.event.issue.title }}'
-          ISSUE_BODY: '${{ github.event.pull_request.body || github.event.issue.body }}'
-          PULL_REQUEST_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
-          REPOSITORY: '${{ github.repository }}'
-          ADDITIONAL_CONTEXT: '${{ inputs.additional_context }}'
+          GITHUB_TOKEN: "${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}"
+          ISSUE_TITLE: "${{ github.event.pull_request.title || github.event.issue.title }}"
+          ISSUE_BODY: "${{ github.event.pull_request.body || github.event.issue.body }}"
+          PULL_REQUEST_NUMBER: "${{ github.event.pull_request.number || github.event.issue.number }}"
+          REPOSITORY: "${{ github.repository }}"
+          ADDITIONAL_CONTEXT: "${{ inputs.additional_context }}"
         with:
-          openai_api_key: '${{ secrets.QWEN_API_KEY }}'
-          openai_base_url: '${{ vars.QWEN_BASE_URL || 'https://coding-intl.dashscope.aliyuncs.com/v1' }}'
-          openai_model: '${{ vars.QWEN_MODEL || 'qwen-coder-plus-latest' }}'
-          qwen_cli_version: '${{ vars.QWEN_CLI_VERSION }}'
-          qwen_debug: '${{ fromJSON(vars.DEBUG || vars.ACTIONS_STEP_DEBUG || 'false') }}'
-          upload_artifacts: '${{ vars.UPLOAD_ARTIFACTS || 'false' }}'
-          workflow_name: 'qwen-review'
-          settings: |-
-            {
-              "model": { "maxSessionTurns": 25 },
-              "telemetry": { "enabled": true, "target": "local", "outfile": ".qwen/telemetry.log" },
-              "mcpServers": {
-                "github": {
-                  "command": "docker",
-                  "args": [ "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server:v0.18.0" ],
-                  "includeTools": [
-                    "add_comment_to_pending_review",
-                    "create_pending_pull_request_review",
-                    "pull_request_read",
-                    "submit_pending_pull_request_review"
-                  ],
-                  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
-                }
-              },
-              "tools": {
-                "core": [
-                  "run_shell_command(cat)",
-                  "run_shell_command(echo)",
-                  "run_shell_command(grep)",
-                  "run_shell_command(head)",
-                  "run_shell_command(tail)"
-                ]
-              }
-            }
+          openai_api_key: "${{ secrets.QWEN_API_KEY }}"
+          openai_base_url: "${{ vars.QWEN_BASE_URL || 'https://coding-intl.dashscope.aliyuncs.com/v1' }}"
+          openai_model: "${{ vars.QWEN_MODEL || 'qwen-coder-plus-latest' }}"
+          qwen_cli_version: "${{ vars.QWEN_CLI_VERSION }}"
+          qwen_debug: "${{ fromJSON(vars.DEBUG || vars.ACTIONS_STEP_DEBUG || 'false') }}"
+          upload_artifacts: "${{ vars.UPLOAD_ARTIFACTS || 'false' }}"
+          workflow_name: "qwen-review"
+          settings: '{"model":{"maxSessionTurns":25},"telemetry":{"enabled":true,"target":"local","outfile":".qwen/telemetry.log"},"mcpServers":{"github":{"command":"docker","args":["run","-i","--rm","-e","GITHUB_PERSONAL_ACCESS_TOKEN","ghcr.io/github/github-mcp-server:v0.18.0"],"includeTools":["add_comment_to_pending_review","create_pending_pull_request_review","pull_request_read","submit_pending_pull_request_review"],"env":{"GITHUB_PERSONAL_ACCESS_TOKEN":"${GITHUB_TOKEN}"}}},"tools":{"core":["run_shell_command(cat)","run_shell_command(echo)","run_shell_command(grep)","run_shell_command(head)","run_shell_command(tail)"]}}'
           prompt: '/qwen-review'
