@@ -47,18 +47,6 @@ jobs:
     # For PRs: only if not from a fork
     # For issues: only on open/reopen
     # For comments: only if user types @qwencoder and is OWNER/MEMBER/COLLABORATOR
-    if: |-
-      (
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.fork == false
-      ) || (
-        github.event_name == 'issues' &&
-        contains(fromJSON('["opened", "reopened"]'), github.event.action)
-      ) || (
-        github.event.sender.type == 'User' &&
-        startsWith(github.event.comment.body || github.event.review.body || github.event.issue.body, '@qwencoder') &&
-        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.review.author_association || github.event.issue.author_association)
-      )
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'read'
