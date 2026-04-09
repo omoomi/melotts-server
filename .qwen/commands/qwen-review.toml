@@ -1,0 +1,35 @@
+# Qwen Code Review Configuration
+# This file defines the behavior and focus of automated PR reviews
+
+[review]
+# Focus areas for the review (comma-separated)
+# Options: security, performance, reliability, maintainability, functionality, all
+focus = 'all'
+
+# Review depth: quick, standard, thorough
+depth = 'standard'
+
+# Provide positive feedback on good practices
+include_positives = true
+
+# Priority levels to report: critical, high, medium, low, all
+min_priority = 'medium'
+
+[standards]
+# Coding standards to enforce
+# Add project-specific rules here
+check_security = true
+check_performance = true
+check_reliability = true
+check_maintainability = true
+check_functionality = true
+
+[output]
+# Output format: markdown, json, plain
+format = 'markdown'
+
+# Include code suggestions
+include_suggestions = true
+
+# Group feedback by file
+group_by_file = true
